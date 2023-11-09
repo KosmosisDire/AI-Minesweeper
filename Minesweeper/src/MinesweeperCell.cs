@@ -18,7 +18,7 @@ public class MinesweeperCell : Button
 
     static NumericProperty size = "40px";
 
-    public MinesweeperCell(Grid<MinesweeperCell> grid, bool isMine = false)
+    public MinesweeperCell(Grid<MinesweeperCell> grid, int x, int y, bool isMine = false)
     {
         this.grid = grid;
 
@@ -60,6 +60,11 @@ public class MinesweeperCell : Button
             if(icon is not null) icon.Style.visible = !icon.Style.visible;
             Style.marginRight.Tween(0, 0.2f, TweenType.EaseInOut);
         });
+    }
+
+    public MinesweeperCell[] GetNeighbors()
+    {
+        return grid.GetNeighbors(x, y);
     }
 
 }

@@ -7,9 +7,9 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
 {
     public MinesweeperGrid(Element parent, int rows, int columns) : base(parent)
     {
-        Regenerate(rows, columns, () => 
+        Regenerate(rows, columns, (x, y) => 
         {
-            var cell = new MinesweeperCell(this);
+            var cell = new MinesweeperCell(this, x, y);
             return cell;
         });
 
