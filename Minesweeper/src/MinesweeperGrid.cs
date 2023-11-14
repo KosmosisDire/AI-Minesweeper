@@ -41,4 +41,24 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         });
     }
 
+    public void RevealAll()
+    {
+        ForEachCell((cell, x, y) => 
+        {
+            cell.Reveal();
+        });
+    }
+
+    public void RevealMines()
+    {
+        ForEachCell((cell, x, y) => 
+        {
+            if (cell.IsMine) cell.Reveal();
+        });
+    }
+
+    public List<MinesweeperCell> GetUnrevealed()
+    {
+        return cells.Where(obj => obj.IsRevealed == false).ToList();
+    }
 }

@@ -1,6 +1,7 @@
 using ProtoEngine;
 using ProtoEngine.UI;
 using SFML.Graphics;
+using TerraFX.Interop.Windows;
 using Image = ProtoEngine.Image;
 
 namespace Minesweeper;
@@ -68,34 +69,37 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         if (IsRevealed) return;
         IsRevealed = true;
 
-        Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
+        /*Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
         {
-            Style.marginRight.Tween(0, 0.1f, TweenType.EaseInOut);
 
-            card.AddStyle(new Style
-            {
-                fillColor = new ColorMod((color) => color.Darken(0.8f))
-            });
+        });*/
 
-            if(IsMine && icon is not null) icon.Style.visible = !icon.Style.visible;
+        //Style.marginRight.Tween(0, 0.1f, TweenType.EaseInOut);
+
+        card.AddStyle(new Style
+        {
+            fillColor = new ColorMod((color) => color.Darken(0.8f))
+        });
+
+        if(IsMine && icon is not null) icon.Style.visible = !icon.Style.visible;
+        else
+        {
+            var count = GetCost(); 
+            if (count > 0) countText.Text = count.ToString(); //Set number for cells
             else
             {
-                var count = GetCost(); 
-                if (count > 0) countText.Text = count.ToString(); //Set number for cells
-                else
+                foreach (var cell in GetNeighbors())
                 {
-                    foreach (var cell in GetNeighbors())
-                    {
-                        if(cell != null) cell.Reveal();
-                    }
+                    if(cell != null) cell.Reveal();
                 }
             }
-        });
+        }
     }
 
 
     public int GetCost()
     {
+        if (IsMine) return 0;
         int cost = 0;
         var neighbors = GetNeighbors();
         foreach (var cell in neighbors)
@@ -110,7 +114,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         foreach(var cell in GetNeighbors()){
             if (cell !=null && cell.IsRevealed)
             {
-                total += GetCost();
+                total += cell.GetCost();
             }
         } 
         return total;
