@@ -25,7 +25,7 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
     {
         ForEachCell((cell, x, y) => 
         {
-            cell.label.Text = "";
+            cell.countText.Text = "";
             if (Application.random.NextSingle() < mineChance)
             {
                 cell.MakeMine();

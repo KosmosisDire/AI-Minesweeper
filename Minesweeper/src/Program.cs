@@ -18,7 +18,7 @@ public class MinesweeperApp : Application
     {
         base.Setup();
 
-        var grid = new MinesweeperGrid(window, 10, 10);
+        var grid = new MinesweeperGrid(window, 20, 20);
         grid.Style.alignSelfX = Alignment.Center;
         grid.Style.alignSelfY = Alignment.Center;
         grid.Style.fillColor = Theme.GlobalTheme.surface1;
@@ -27,7 +27,7 @@ public class MinesweeperApp : Application
         grid.Style.radius = "2em";
         grid.Style.paddingX = "2em";
         grid.Style.paddingY = "2em";
-        grid.GenerateMap(0.3f);
+        grid.GenerateMap(0.1f);
         grid.ForEachCell((cell, x, y) => 
         {
             cell.OnClick += (button) => 
