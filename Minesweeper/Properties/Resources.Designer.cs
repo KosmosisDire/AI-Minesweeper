@@ -69,5 +69,12 @@ namespace Minesweeper.Properties {
                 return ((byte[])(obj));
             }
         }
+
+        internal static byte[] flag {
+            get {
+                object obj = ResourceManager.GetObject("flag", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }
