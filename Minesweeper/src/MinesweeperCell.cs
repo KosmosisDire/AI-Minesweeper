@@ -116,6 +116,11 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         return total;
     }
 
+    public int GetNeighborCount()
+    {
+        var neighbors = GetNeighbors().Where(obj => obj != null);
+        return neighbors.Count();
+    }
     public MinesweeperCell[] GetNeighbors()
     {
         return grid.GetNeighbors(x, y);

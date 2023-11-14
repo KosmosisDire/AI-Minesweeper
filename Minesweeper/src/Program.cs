@@ -15,25 +15,34 @@ public class MinesweeperApp : Application
 {
     public MinesweeperApp(string name, Color windowFill, bool fullscreen, Vector2? size = null) : base(name, windowFill, fullscreen, size){}
     public List<MinesweeperCell> AdjCells = new List<MinesweeperCell>();
+    public MinesweeperGrid grid;
     protected override void Setup()
     {
         base.Setup();
-        var grid = new MinesweeperGrid(window, 20, 20);
+        grid = new MinesweeperGrid(window, 16, 30);
         grid.GenerateMap(0.1f);
         window.RebuildAllChildren();
         AdjCells.AddRange(grid.cells);
+        AdjCells.First().Reveal();
+        AdjCells.Remove(AdjCells.First());
     }
 
     protected override void Update(float dt)
     {
         base.Update(dt);
         AdjCells.Sort();
-        Console.WriteLine("Sorted list: " + AdjCells.First().AdjacentCost());
-        var min = AdjCells.First(); //Find neighbor with lowest cost
+        var min = AdjCells.Find(obj => obj.AdjacentCost() != 0); //Find neighbor with lowest cost
+        if (min.AdjacentCost() >= min.GetNeighborCount()) {
+            min = AdjCells.First();
+        }
         Console.WriteLine("Minimum Cell: Is it a mine? " + min.IsMine);
         if (min == null) return;
         min.Reveal();
-        if (min.IsMine) return; //Stop checking if mine is found
+        Console.WriteLine("Sorted list: " + min.AdjacentCost());
+        if (min.IsMine) {
+            grid.ForEachCell((cell,x,y) => cell.Reveal());
+            return; //Stop checking if mine is found
+        }
         AdjCells.Remove(min); //Remove adjacent cell after revealing
         Thread.Sleep(1000); //Sloww down
     }
