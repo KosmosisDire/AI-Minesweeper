@@ -5,7 +5,7 @@ using Image = ProtoEngine.Image;
 
 namespace Minesweeper;
 
-public class MinesweeperCell : Button
+public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 {
     public bool IsMine { get; protected set;}
     public bool IsRevealed { get; protected set; }
@@ -80,17 +80,11 @@ public class MinesweeperCell : Button
             if(IsMine && icon is not null) icon.Style.visible = !icon.Style.visible;
             else
             {
-                int count = 0;
-                var neighbors = GetNeighbors();
-                foreach (var cell in neighbors)
-                {
-                    if (cell != null && cell.IsMine) count++;
-                }
-
-                if (count > 0) countText.Text = count.ToString();
+                var count = GetCost(); 
+                if (count > 0) countText.Text = count.ToString(); //Set number for cells
                 else
                 {
-                    foreach (var cell in neighbors)
+                    foreach (var cell in GetNeighbors())
                     {
                         if(cell != null) cell.Reveal();
                     }
@@ -99,9 +93,36 @@ public class MinesweeperCell : Button
         });
     }
 
+
+    public int GetCost()
+    {
+        int cost = 0;
+        var neighbors = GetNeighbors();
+        foreach (var cell in neighbors)
+        {
+            if (cell != null && cell.IsMine) cost++;
+        }
+        return cost;
+    }
+    public int AdjacentCost()
+    {
+        var total = 0;
+        foreach(var cell in GetNeighbors()){
+            if (cell !=null && cell.IsRevealed)
+            {
+                total += GetCost();
+            }
+        } 
+        return total;
+    }
+
     public MinesweeperCell[] GetNeighbors()
     {
         return grid.GetNeighbors(x, y);
     }
 
+    public int CompareTo(MinesweeperCell obj)
+    {
+        return  this.AdjacentCost() - obj.AdjacentCost();
+    }
 }

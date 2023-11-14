@@ -19,6 +19,14 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         Style.contentFitY = Fit.Fit;
 
         Style.gap = "0.2em";
+        Style.alignSelfX = Alignment.Center;
+        Style.alignSelfY = Alignment.Center;
+        Style.fillColor = Theme.GlobalTheme.surface1;
+        Style.outlineColor = Theme.GlobalTheme.surface1Outline;
+        Style.outlineWidth = "2px";
+        Style.radius = "2em";
+        Style.paddingX = "2em";
+        Style.paddingY = "2em";
     }
 
     public void GenerateMap(float mineChance = 0.1f)
