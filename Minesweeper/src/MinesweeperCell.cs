@@ -16,12 +16,12 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 
     public Image? icon;
     public TextElement countText;
-    public readonly Grid<MinesweeperCell> grid;
+    public readonly MinesweeperGrid grid;
     private Element card;
 
     static NumericProperty size = "40px";
 
-    public MinesweeperCell(Grid<MinesweeperCell> grid, int x, int y, bool isMine = false)
+    public MinesweeperCell(MinesweeperGrid grid, int x, int y, bool isMine = false)
     {
         this.grid = grid;
         this.x = x;
@@ -69,6 +69,8 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         if (IsRevealed) return;
         IsRevealed = true;
 
+        grid.unrevealedCells.Remove(this);  
+
         /*Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
         {
 
@@ -85,7 +87,10 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         else
         {
             var count = GetCost(); 
-            if (count > 0) countText.Text = count.ToString(); //Set number for cells
+            if (count > 0) 
+            {
+                countText.Text = count.ToString(); //Set number for cells
+            }
             else
             {
                 foreach (var cell in GetNeighbors())
@@ -108,8 +113,24 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         }
         return cost;
     }
-    public int AdjacentCost()
+    public float NormalizedAdjacentCost()
     {
+        var revealedNeighborCount = GetRevealedNeighborCount();
+        if (revealedNeighborCount == 0) return float.MaxValue;
+        var total = 0;
+        foreach(var cell in GetNeighbors()){
+            if (cell !=null && cell.IsRevealed)
+            {
+                total += cell.GetCost();
+            }
+        } 
+        return total / (float)revealedNeighborCount;
+    }
+
+    public float AdjacentCost()
+    {
+        var revealedNeighborCount = GetRevealedNeighborCount();
+        if (revealedNeighborCount == 0) return float.MaxValue;
         var total = 0;
         foreach(var cell in GetNeighbors()){
             if (cell !=null && cell.IsRevealed)
@@ -125,6 +146,13 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         var neighbors = GetNeighbors().Where(obj => obj != null);
         return neighbors.Count();
     }
+
+    public int GetRevealedNeighborCount()
+    {
+        var neighbors = GetNeighbors().Where(obj => obj != null && obj.IsRevealed);
+        return neighbors.Count();
+    }
+
     public MinesweeperCell[] GetNeighbors()
     {
         return grid.GetNeighbors(x, y);
@@ -132,6 +160,6 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 
     public int CompareTo(MinesweeperCell obj)
     {
-        return  this.AdjacentCost() - obj.AdjacentCost();
+        return  (int)MathF.Round(this.NormalizedAdjacentCost() - obj.NormalizedAdjacentCost());
     }
 }

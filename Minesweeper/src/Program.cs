@@ -16,7 +16,6 @@ namespace Minesweeper
 public class MinesweeperApp : Application
 {
     public MinesweeperApp(string name, Color windowFill, bool fullscreen, Vector2? size = null) : base(name, windowFill, fullscreen, size){}
-    public List<MinesweeperCell> AdjCells = new List<MinesweeperCell>();
     public MinesweeperGrid grid;
 
     public bool foundMine = false;
@@ -26,16 +25,14 @@ public class MinesweeperApp : Application
         //grid = new MinesweeperGrid(window, 16, 30);
         //grid.GenerateMap(0.2f);
         window.globalEvents.KeyPressed+= (KeyEventArgs e, Window window) => {
-            if (e.Code==Keyboard.Key.R) {
+            if (e.Code==Keyboard.Key.R) 
+            {
                 lock(this)
                 {
                     if (grid!=null) grid.Remove();
-                    grid = new MinesweeperGrid(window, 16, 30);
-                    grid.GenerateMap(0.2f);
-                    AdjCells.Clear();
-                    AdjCells.AddRange(grid.cells); //Get adjacent cells
-                    grid.cells[Application.random.Next(0,grid.cells.Count())].Reveal();
-                    AdjCells.Remove(AdjCells.First());
+                    grid = new MinesweeperGrid(window, 10, 10);
+                    grid.GenerateMap(0.15f);
+                    grid.cells[random.Next(0,grid.cells.Count())].Reveal();
                     grid.ForEachCell((cell,x,y) => cell.OnClick+= obj => //Reveal mines when clicked
                         grid.RevealMines()
                     );
@@ -52,24 +49,13 @@ public class MinesweeperApp : Application
         lock(this)
         {
             base.Update(dt);
-            AdjCells = grid.GetUnrevealed();
-            AdjCells.ForEach((cell) => cell.countText.Text = cell.AdjacentCost().ToString());
-            AdjCells.Sort();
-            var min = AdjCells.Find(obj => obj.AdjacentCost() != 0); //Find neighbor with lowest cost
-            if (min == null) return;
-            if (min.AdjacentCost() >= min.GetNeighborCount()) { //If greater than neighborcount => choose random cell
-                min = AdjCells.First(); 
-            }
-            min.Reveal();
-            Console.WriteLine("Sorted list: " + min.AdjacentCost());
-            if (min.IsMine) {
-                //grid.ForEachCell((cell,x,y) => cell.Reveal());
+            var toReveal = Algorithms.StupidButIntuitiveSolver(grid);
+
+            if (toReveal == null)
+            {
                 foundMine = true;
-                //grid.RevealMines();
-                return; //Stop checking if mine is found
+                return;
             }
-            //AdjCells.Remove(min); //Remove adjacent cell after revealing
-            //Thread.Sleep(1000); //Sloww down
         }
     }
 

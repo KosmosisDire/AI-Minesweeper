@@ -5,6 +5,8 @@ namespace Minesweeper;
 
 public class MinesweeperGrid : Grid<MinesweeperCell>
 {
+    public List<MinesweeperCell> unrevealedCells = new List<MinesweeperCell>();
+
     public MinesweeperGrid(Element parent, int rows, int columns) : base(parent)
     {
         Regenerate(rows, columns, (x, y) => 
@@ -27,6 +29,8 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         Style.radius = "2em";
         Style.paddingX = "2em";
         Style.paddingY = "2em";
+
+        unrevealedCells.AddRange(cells);
     }
 
     public void GenerateMap(float mineChance = 0.1f)
@@ -57,8 +61,4 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         });
     }
 
-    public List<MinesweeperCell> GetUnrevealed()
-    {
-        return cells.Where(obj => obj.IsRevealed == false).ToList();
-    }
 }
