@@ -53,6 +53,11 @@ public class MinesweeperApp : Application
             base.Update(dt);
             var toReveal = Algorithms.SemanticSolver(grid);
 
+            if (grid.AllMinesFlagged())
+            {
+                grid.RevealMines();
+            }
+
             // if (toReveal == null)
             // {
             //     foundMine = true;

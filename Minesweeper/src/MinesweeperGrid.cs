@@ -62,4 +62,9 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         });
     }
 
+    public bool AllMinesFlagged()
+    {
+        return cells.TrueForAll(cell => cell.IsFlagged == cell.isMine);
+    }
+
 }

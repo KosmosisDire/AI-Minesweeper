@@ -74,7 +74,7 @@ public static class Algorithms
             }
         }
 
-        // Thread.Sleep(1000);
+        Thread.Sleep(100);
 
         return null;
     };

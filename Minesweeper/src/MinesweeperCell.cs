@@ -82,10 +82,10 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         grid.unrevealedCells.Remove(this);  
         grid.revealedCells.Add(this);
 
-        /*Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
+        Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
         {
 
-        });*/
+        });
 
         //Style.marginRight.Tween(0, 0.1f, TweenType.EaseInOut);
 
