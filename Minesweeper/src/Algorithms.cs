@@ -21,7 +21,7 @@ public static class Algorithms
         if (min == null) return null;
 
         min.Reveal();
-        if (min.IsMine) 
+        if (min.isMine) 
         {
             return null; //Stop checking if mine is found
         }
@@ -36,6 +36,37 @@ public static class Algorithms
         Thread.Sleep(1000);
 
         return min;
+    };
+
+    public static Solver SemanticSolver = (MinesweeperGrid grid) =>
+    {
+        var revealed = new List<MinesweeperCell>();
+        revealed.AddRange(grid.revealedCells);
+
+        revealed.ForEach((cell) => 
+        {
+            var cost = cell.GetCost();
+            if (cost == 0) return;
+
+            if (cell.GetFlaggedNeighborCount() == cost)
+            {
+                cell.GetNeighbors().Where(obj => obj != null && !obj.IsRevealed && !obj.IsFlagged).ToList().ForEach(obj => obj.Reveal());
+            }
+            else if (cell.GetUnrevealedNeighborCount() == cost)
+            {
+                cell.GetNeighbors().Where(obj => obj != null && !obj.IsRevealed).ToList().ForEach(obj => obj.Flag());
+            }
+        });
+
+        grid.ForEachCell((cell, x, y) => 
+        {
+            cell.countText.Text = cell.GetCost().ToString();
+        });
+
+        // Thread.Sleep(1000);
+
+        return null;
+
     };
 
 }

@@ -6,6 +6,7 @@ namespace Minesweeper;
 public class MinesweeperGrid : Grid<MinesweeperCell>
 {
     public List<MinesweeperCell> unrevealedCells = new List<MinesweeperCell>();
+    public List<MinesweeperCell> revealedCells = new List<MinesweeperCell>();
 
     public MinesweeperGrid(Element parent, int rows, int columns) : base(parent)
     {
@@ -40,7 +41,7 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
             cell.countText.Text = "";
             if (Application.random.NextSingle() < mineChance)
             {
-                cell.MakeMine();
+                cell.isMine = true;
             }
         });
     }
@@ -57,7 +58,7 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
     {
         ForEachCell((cell, x, y) => 
         {
-            if (cell.IsMine) cell.Reveal();
+            if (cell.isMine) cell.Reveal();
         });
     }
 

@@ -63,16 +63,29 @@ namespace Minesweeper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] mine {
-            get {
-                object obj = ResourceManager.GetObject("mine", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-
         internal static byte[] flag {
             get {
                 object obj = ResourceManager.GetObject("flag", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] grass {
+            get {
+                object obj = ResourceManager.GetObject("grass", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] mine {
+            get {
+                object obj = ResourceManager.GetObject("mine", resourceCulture);
                 return ((byte[])(obj));
             }
         }

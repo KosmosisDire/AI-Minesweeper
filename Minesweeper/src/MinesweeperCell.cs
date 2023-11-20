@@ -8,13 +8,14 @@ namespace Minesweeper;
 
 public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 {
-    public bool IsMine { get; protected set;}
+    public bool isMine;
+    public bool IsFlagged { get; protected set; }
     public bool IsRevealed { get; protected set; }
     public int x;
     public int y;
     public Vector2 Coord => new(x, y);
 
-    public Image? icon;
+    public Image icon;
     public TextElement countText;
     public readonly MinesweeperGrid grid;
     private Element card;
@@ -47,21 +48,29 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         countText.Style.alignSelfX = Alignment.Center;
         countText.Style.alignSelfY = Alignment.Center;
 
-        if (isMine) MakeMine();
+        icon = new Image(Properties.Resources.grass);
+        icon.Style.visible = false;
+        icon.Parent = card;
+
+        this.isMine = isMine;
     }
 
-    public void MakeMine()
+    public void Flag()
     {
-        IsMine = true;
-        icon = new Image(Properties.Resources.mine);
+        if (IsRevealed) return;
+        IsFlagged = true;
+        SetIcon(Properties.Resources.flag);
+        icon.Style.visible = true;
+    }
+
+    public void SetIcon(byte[] imageData)
+    {
+        icon.sprite.Texture = new Texture(imageData);
         icon.Style.width = "2em";
         icon.Style.height = icon.Style.width;
         icon.Style.alignSelfX = Alignment.Center;
         icon.Style.alignSelfY = Alignment.Center;
-        icon.Style.visible = false;
         icon.Style.ignorePointerEvents = true;
-        
-        AddChild(icon);
     }
 
     public void Reveal()
@@ -70,6 +79,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         IsRevealed = true;
 
         grid.unrevealedCells.Remove(this);  
+        grid.revealedCells.Add(this);
 
         /*Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
         {
@@ -83,19 +93,23 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
             fillColor = new ColorMod((color) => color.Darken(0.8f))
         });
 
-        if(IsMine && icon is not null) icon.Style.visible = !icon.Style.visible;
+        if(IsFlagged || isMine) 
+        {
+            if (IsFlagged && isMine) SetIcon(Properties.Resources.grass);
+            else if (isMine) SetIcon(Properties.Resources.mine);
+        }
         else
         {
-            var count = GetCost(); 
-            if (count > 0) 
+            var count = GetCost();
+            if (count > 0)
             {
-                countText.Text = count.ToString(); //Set number for cells
+                //countText.Text = count.ToString(); //Set number for cells
             }
             else
             {
                 foreach (var cell in GetNeighbors())
                 {
-                    if(cell != null) cell.Reveal();
+                    if(!cell.IsFlagged) cell.Reveal();
                 }
             }
         }
@@ -104,22 +118,24 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 
     public int GetCost()
     {
-        if (IsMine) return 0;
+        if (isMine) return -1;
+
         int cost = 0;
         var neighbors = GetNeighbors();
         foreach (var cell in neighbors)
         {
-            if (cell != null && cell.IsMine) cost++;
+            if (cell.isMine) cost++;
         }
         return cost;
     }
+
     public float NormalizedAdjacentCost()
     {
         var revealedNeighborCount = GetRevealedNeighborCount();
         if (revealedNeighborCount == 0) return float.MaxValue;
         var total = 0;
         foreach(var cell in GetNeighbors()){
-            if (cell !=null && cell.IsRevealed)
+            if (cell.IsRevealed)
             {
                 total += cell.GetCost();
             }
@@ -133,7 +149,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         if (revealedNeighborCount == 0) return float.MaxValue;
         var total = 0;
         foreach(var cell in GetNeighbors()){
-            if (cell !=null && cell.IsRevealed)
+            if (cell.IsRevealed)
             {
                 total += cell.GetCost();
             }
@@ -150,6 +166,18 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     public int GetRevealedNeighborCount()
     {
         var neighbors = GetNeighbors().Where(obj => obj != null && obj.IsRevealed);
+        return neighbors.Count();
+    }
+
+    public int GetUnrevealedNeighborCount()
+    {
+        var neighbors = GetNeighbors().Where(obj => obj != null && !obj.IsRevealed);
+        return neighbors.Count();
+    }
+
+    public int GetFlaggedNeighborCount()
+    {
+        var neighbors = GetNeighbors().Where(obj => obj != null && obj.IsFlagged);
         return neighbors.Count();
     }
 

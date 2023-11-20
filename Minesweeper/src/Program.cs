@@ -30,11 +30,11 @@ public class MinesweeperApp : Application
                 lock(this)
                 {
                     if (grid!=null) grid.Remove();
-                    grid = new MinesweeperGrid(window, 10, 10);
-                    grid.GenerateMap(0.15f);
-                    grid.cells[random.Next(0,grid.cells.Count())].Reveal();
+                    grid = new MinesweeperGrid(window, 16, 30);
+                    grid.GenerateMap(0.2f);
+                    // grid.cells[random.Next(0,grid.cells.Count())].Reveal();
                     grid.ForEachCell((cell,x,y) => cell.OnClick+= obj => //Reveal mines when clicked
-                        grid.RevealMines()
+                        cell.Reveal()
                     );
                     foundMine = false;
                     window.RebuildAllChildren();
@@ -49,13 +49,13 @@ public class MinesweeperApp : Application
         lock(this)
         {
             base.Update(dt);
-            var toReveal = Algorithms.StupidButIntuitiveSolver(grid);
+            var toReveal = Algorithms.SemanticSolver(grid);
 
-            if (toReveal == null)
-            {
-                foundMine = true;
-                return;
-            }
+            // if (toReveal == null)
+            // {
+            //     foundMine = true;
+            //     return;
+            // }
         }
     }
 
