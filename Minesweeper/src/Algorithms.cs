@@ -43,19 +43,36 @@ public static class Algorithms
         var revealed = new List<MinesweeperCell>();
         revealed.AddRange(grid.revealedCells);
 
-        revealed.ForEach((cell) => 
+        for (int i = 0; i < revealed.Count; i++)
         {
+            var cell = revealed[i];
             var cost = cell.GetCost();
+            if (cost == 0) continue;
+
+            var neighbors = cell.GetNeighbors();
 
             if (cell.GetFlaggedNeighborCount() == cost)
             {
-                cell.GetNeighbors().Where(obj => obj != null && !obj.IsRevealed && !obj.IsFlagged).ToList().ForEach(obj => obj.Reveal());
+                foreach (var n in neighbors) 
+                {
+                    if (!n.IsRevealed && !n.IsFlagged)
+                    {
+                        n.Reveal();
+                    }
+                }
             }
-            else if (cell.GetUnrevealedNeighborCount() == cost)
+
+            if (cell.GetUnrevealedNeighborCount() == cost)
             {
-                cell.GetNeighbors().Where(obj => obj != null && !obj.IsRevealed).ToList().ForEach(obj => obj.Flag());
+                foreach (var n in neighbors) 
+                {
+                    if (!n.IsRevealed && !n.IsFlagged)
+                    {
+                        n.Flag();
+                    }
+                }
             }
-        });
+        }
 
         // Thread.Sleep(1000);
 

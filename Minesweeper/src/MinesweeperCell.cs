@@ -59,7 +59,8 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     {
         if (IsRevealed) return;
         IsFlagged = true;
-        SetIcon(Properties.Resources.flag);
+        if (isMine) SetIcon(Properties.Resources.flag);
+        else SetIcon(Properties.Resources.wrongflag);
     }
 
     public void SetIcon(byte[] imageData)
@@ -185,9 +186,12 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         return neighbors.Count();
     }
 
+    private MinesweeperCell[] cachedNeighbors;
     public MinesweeperCell[] GetNeighbors()
     {
-        return grid.GetNeighbors(x, y);
+        if (cachedNeighbors != null) return cachedNeighbors;
+        cachedNeighbors = grid.GetNeighbors(x, y);
+        return cachedNeighbors;
     }
 
     public int CompareTo(MinesweeperCell obj)

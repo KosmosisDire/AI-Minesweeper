@@ -31,7 +31,7 @@ public class MinesweeperApp : Application
                 {
                     if (grid!=null) grid.Remove();
                     grid = new MinesweeperGrid(window, 16, 30);
-                    grid.GenerateMap(0.2f);
+                    grid.GenerateMap(0.1f);
                     // grid.cells[random.Next(0,grid.cells.Count())].Reveal();
                     grid.ForEachCell((cell,x,y) => cell.OnClick+= obj => //Reveal mines when clicked
                         cell.Reveal()
@@ -41,6 +41,8 @@ public class MinesweeperApp : Application
                 }
             }
         };
+        
+        updateLoop.targetFPS = 10;
     }
 
     protected override void Update(float dt)
