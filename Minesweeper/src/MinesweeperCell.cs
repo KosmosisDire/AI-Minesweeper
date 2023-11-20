@@ -60,7 +60,6 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         if (IsRevealed) return;
         IsFlagged = true;
         SetIcon(Properties.Resources.flag);
-        icon.Style.visible = true;
     }
 
     public void SetIcon(byte[] imageData)
@@ -71,6 +70,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         icon.Style.alignSelfX = Alignment.Center;
         icon.Style.alignSelfY = Alignment.Center;
         icon.Style.ignorePointerEvents = true;
+        icon.Style.visible = true;
     }
 
     public void Reveal()
@@ -93,10 +93,14 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
             fillColor = new ColorMod((color) => color.Darken(0.8f))
         });
 
-        if(IsFlagged || isMine) 
+        if(IsFlagged && isMine) 
         {
-            if (IsFlagged && isMine) SetIcon(Properties.Resources.grass);
-            else if (isMine) SetIcon(Properties.Resources.mine);
+            SetIcon(Properties.Resources.grass);
+        }
+        else if (isMine) 
+        {
+            Console.WriteLine("Mine!");
+            SetIcon(Properties.Resources.mine);
         }
         else
         {
