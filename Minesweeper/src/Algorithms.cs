@@ -46,7 +46,6 @@ public static class Algorithms
         revealed.ForEach((cell) => 
         {
             var cost = cell.GetCost();
-            if (cost == 0) return;
 
             if (cell.GetFlaggedNeighborCount() == cost)
             {
@@ -66,7 +65,6 @@ public static class Algorithms
         // Thread.Sleep(1000);
 
         return null;
-
     };
 
 }
