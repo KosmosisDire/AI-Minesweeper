@@ -1,3 +1,4 @@
+using System.Net.Security;
 using ProtoEngine;
 using ProtoEngine.UI;
 using SFML.Graphics;
@@ -11,6 +12,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     public bool isMine;
     public bool IsFlagged { get; protected set; }
     public bool IsRevealed { get; protected set; }
+    public bool IsVisuallyRevealed { get; protected set; }
     public int x;
     public int y;
     public Vector2 Coord => new(x, y);
@@ -74,7 +76,32 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         icon.Style.visible = true;
     }
 
-    public void Reveal()
+    public void AnimateReveal()
+    {
+        if (IsVisuallyRevealed) return;
+        IsVisuallyRevealed = true;
+        
+        Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
+        {
+            card.AddStyle(new Style
+            {
+                fillColor = new ColorMod((color) => color.Darken(0.6f))
+            });
+
+            Style.marginRight.Tween(0, 0.1f, TweenType.EaseInOut);
+
+            var cost = GetCost();
+            if (cost == 0)
+            {
+                foreach (var cell in GetNeighbors())
+                {
+                    if(!cell.IsFlagged) cell.AnimateReveal();
+                }
+            }
+        });
+    }
+
+    private void RevealRecursive()
     {
         if (IsRevealed) return;
         IsRevealed = true;
@@ -82,42 +109,35 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         grid.unrevealedCells.Remove(this);  
         grid.revealedCells.Add(this);
 
-        Style.marginRight.Tween(size / 2f, 0.1f, TweenType.EaseInOut, () =>
-        {
-
-        });
-
-        //Style.marginRight.Tween(0, 0.1f, TweenType.EaseInOut);
-
-        card.AddStyle(new Style
-        {
-            fillColor = new ColorMod((color) => color.Darken(0.8f))
-        });
-
         if(IsFlagged && isMine) 
         {
             SetIcon(Properties.Resources.grass);
         }
         else if (isMine) 
         {
-            Console.WriteLine("Mine!");
             SetIcon(Properties.Resources.mine);
         }
         else
         {
-            var count = GetCost();
-            if (count > 0)
+            var cost = GetCost();
+            if (cost > 0)
             {
-                countText.Text = count.ToString(); //Set number for cells
+                countText.Text = cost.ToString(); //Set number for cells
             }
             else
             {
                 foreach (var cell in GetNeighbors())
                 {
-                    if(!cell.IsFlagged) cell.Reveal();
+                    if(!cell.IsFlagged) cell.RevealRecursive();
                 }
             }
         }
+    }
+
+    public void Reveal()
+    {
+        AnimateReveal();
+        RevealRecursive();
     }
 
 

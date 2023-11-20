@@ -41,8 +41,6 @@ public class MinesweeperApp : Application
                 }
             }
         };
-        
-        updateLoop.targetFPS = 10;
     }
 
     protected override void Update(float dt)
