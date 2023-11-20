@@ -57,11 +57,6 @@ public static class Algorithms
             }
         });
 
-        grid.ForEachCell((cell, x, y) => 
-        {
-            cell.countText.Text = cell.GetCost().ToString();
-        });
-
         // Thread.Sleep(1000);
 
         return null;

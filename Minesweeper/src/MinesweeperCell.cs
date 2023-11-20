@@ -107,7 +107,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
             var count = GetCost();
             if (count > 0)
             {
-                //countText.Text = count.ToString(); //Set number for cells
+                countText.Text = count.ToString(); //Set number for cells
             }
             else
             {
