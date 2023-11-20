@@ -20,9 +20,9 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     public Image icon;
     public TextElement countText;
     public readonly MinesweeperGrid grid;
-    private Element card;
+    public Element card;
 
-    static NumericProperty size = "40px";
+    static NumericProperty size = "2em";
 
     public MinesweeperCell(MinesweeperGrid grid, int x, int y, bool isMine = false)
     {
@@ -68,7 +68,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     public void SetIcon(byte[] imageData)
     {
         icon.sprite.Texture = new Texture(imageData);
-        icon.Style.width = "2em";
+        icon.Style.width = card.InnerWidth;
         icon.Style.height = icon.Style.width;
         icon.Style.alignSelfX = Alignment.Center;
         icon.Style.alignSelfY = Alignment.Center;
@@ -99,6 +99,30 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
                 }
             }
         });
+    }
+
+    public void InstantVisualReveal()
+    {
+        if (IsVisuallyRevealed) return;
+        IsVisuallyRevealed = true;
+        
+        Style.marginRight = size / 2f;
+
+        card.AddStyle(new Style
+        {
+            fillColor = new ColorMod((color) => color.Darken(0.6f))
+        });
+
+        Style.marginRight = 0;
+
+        var cost = GetCost();
+        if (cost == 0)
+        {
+            foreach (var cell in GetNeighbors())
+            {
+                if(!cell.IsFlagged) cell.InstantVisualReveal();
+            }
+        }
     }
 
     private void RevealRecursive()
@@ -134,10 +158,20 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         }
     }
 
-    public void Reveal()
+    public void Reveal(bool isFirst = false)
     {
-        AnimateReveal();
+        // AnimateReveal();
+        InstantVisualReveal();
         RevealRecursive();
+
+        if (isMine && isFirst) 
+        {
+            SetIcon(Properties.Resources.explosion);
+            card.AddStyle(new Style
+            {
+                fillColor = Color.Red.Darken(0.6f)
+            });
+        }
     }
 
 
@@ -184,25 +218,43 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 
     public int GetNeighborCount()
     {
-        var neighbors = GetNeighbors().Where(obj => obj != null);
-        return neighbors.Count();
+        return GetNeighbors().Count();
     }
 
     public int GetRevealedNeighborCount()
     {
-        var neighbors = GetNeighbors().Where(obj => obj != null && obj.IsRevealed);
+        var neighbors = GetNeighbors().Where(obj => obj.IsRevealed);
         return neighbors.Count();
+    }
+
+    public List<MinesweeperCell> GetRevealedNeighbors()
+    {
+        var neighbors = GetNeighbors().Where(obj => obj.IsRevealed);
+        return neighbors.ToList();
     }
 
     public int GetUnrevealedNeighborCount()
     {
-        var neighbors = GetNeighbors().Where(obj => obj != null && !obj.IsRevealed);
+        var neighbors = GetNeighbors().Where(obj => !obj.IsRevealed);
         return neighbors.Count();
     }
 
+    public List<MinesweeperCell> GetUnrevealedNeighbors()
+    {
+        var neighbors = GetNeighbors().Where(obj => !obj.IsRevealed);
+        return neighbors.ToList();
+    }
+
+    public List<MinesweeperCell> GetUnrevealedUnflaggedNeighbors()
+    {
+        var neighbors = GetNeighbors().Where(obj => !obj.IsRevealed && !obj.IsFlagged);
+        return neighbors.ToList();
+    }
+
+
     public int GetFlaggedNeighborCount()
     {
-        var neighbors = GetNeighbors().Where(obj => obj != null && obj.IsFlagged);
+        var neighbors = GetNeighbors().Where(obj => obj.IsFlagged);
         return neighbors.Count();
     }
 
@@ -217,5 +269,17 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     public int CompareTo(MinesweeperCell obj)
     {
         return  (int)MathF.Round(this.NormalizedAdjacentCost() - obj.NormalizedAdjacentCost());
+    }
+
+    public void ResetCell()
+    {
+        isMine = false;
+        IsFlagged = false;
+        IsRevealed = false;
+        IsVisuallyRevealed = false;
+        countText.Text = "";
+        icon.Style.visible = false;
+        card.ClearStyles();
+        this.ClearStyles();
     }
 }

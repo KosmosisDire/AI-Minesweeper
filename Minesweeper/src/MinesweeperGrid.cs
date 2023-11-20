@@ -28,8 +28,8 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         Style.outlineColor = Theme.GlobalTheme.surface1Outline;
         Style.outlineWidth = "2px";
         Style.radius = "2em";
-        Style.paddingX = "2em";
-        Style.paddingY = "2em";
+        Style.paddingX = "1.5em";
+        Style.paddingY = "1.5em";
 
         unrevealedCells.AddRange(cells);
     }
@@ -65,6 +65,18 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
     public bool AllMinesFlagged()
     {
         return cells.TrueForAll(cell => cell.IsFlagged == cell.isMine);
+    }
+
+    public void ResetGrid()
+    {
+        ForEachCell((cell, x, y) => 
+        {
+            cell.ResetCell();
+        });
+
+        unrevealedCells.Clear();
+        revealedCells.Clear();
+        unrevealedCells.AddRange(cells);
     }
 
 }

@@ -17,51 +17,134 @@ public class MinesweeperApp : Application
 {
     public MinesweeperApp(string name, Color windowFill, bool fullscreen, Vector2? size = null) : base(name, windowFill, fullscreen, size){}
     public MinesweeperGrid grid;
+    public float successRate = 1;
+    public int wins = 0;
+    public int losses = 0;
+    public int runs = 0;
+    
+    public Plot winLossPlot;
+    public Plot successPlot;
 
     public bool foundMine = false;
     protected override void Setup()
     {
         base.Setup();
-        //grid = new MinesweeperGrid(window, 16, 30);
-        //grid.GenerateMap(0.2f);
+
+        window.Style.fontSize = window.Width / 1920f * 16f;
+
+        CreateBoard(30, 16, 0.15f);
+
+        var infoPanel = new Panel(window);
+        winLossPlot = new Plot(infoPanel, new Series[]
+        {
+            new(Color.Green, new(() => wins)),
+            new(Color.Red, new(() => losses))
+        });
+
+        successPlot = new Plot(infoPanel, new Series[]
+        {
+            new(Color.Blue, new(() => successRate))
+        });
+
+        new TextElement(infoPanel, () => "Success Rate: " + successRate);
+        new TextElement(infoPanel, () => "Wins: " + wins);
+        new TextElement(infoPanel, () => "Losses: " + losses);
+
         window.globalEvents.KeyPressed+= (KeyEventArgs e, Window window) => {
             if (e.Code==Keyboard.Key.R) 
             {
-                lock(this)
-                {
-                    if (grid!=null) grid.Remove();
-                    grid = new MinesweeperGrid(window, 16, 30);
-                    grid.GenerateMap(0.1f);
-                    // grid.cells[random.Next(0,grid.cells.Count())].Reveal();
-                    grid.ForEachCell((cell,x,y) => cell.OnClick+= obj => //Reveal mines when clicked
-                        cell.Reveal()
-                    );
-                    foundMine = false;
-                    window.RebuildAllChildren();
-                }
+                RunDensityTest();
             }
         };
     }
 
-    protected override void Update(float dt)
+    public void RunSolveBatch(int runs, float mineDensity)
     {
-        if (grid==null || foundMine) return;
-        lock(this)
+        int localWins = 0;
+        int localLosses = 0;
+        for (int i = 0; i < runs; i++)
         {
-            base.Update(dt);
-            var toReveal = Algorithms.SemanticSolver(grid);
+            grid.ResetGrid();
+            grid.GenerateMap(mineDensity);
+            var success = RunSolve();
+            if (success) localWins++;
+            else localLosses++;
+        }
 
-            if (grid.AllMinesFlagged())
+        successRate = (float)localWins / (localWins + localLosses);
+        wins = localWins;
+        losses = localLosses;
+
+        Console.WriteLine($"Success Rate: {successRate} Wins: {wins} Losses: {losses}");
+    }
+
+    public void RunDensityTest()
+    {
+        winLossPlot.Reset();
+        successPlot.Reset();
+        winLossPlot.Start();
+        successPlot.Start();
+
+        updateLoop.RunAction(() => {
+
+            for (float i = 0; i < 0.25; i += 0.02f)
             {
-                grid.RevealMines();
+                RunSolveBatch(100, i);
             }
 
-            // if (toReveal == null)
-            // {
-            //     foundMine = true;
-            //     return;
-            // }
+            winLossPlot.Stop();
+            successPlot.Stop();
+        });
+
+        
+    }
+
+    public void CreateBoard(int width, int height, float bombChance)
+    {
+        lock(this)
+        {
+            if (grid is not null) grid.Remove();
+
+            grid = new MinesweeperGrid(window, height, width);
+
+            grid.GenerateMap(bombChance);
+
+            grid.ForEachCell((cell,x,y) => 
+            {
+                cell.OnClick += (obj) => cell.Reveal();
+                if (cell.isMine) cell.SetIcon(Properties.Resources.mine);
+            });
+
+            foundMine = false;
+            window.RebuildAllChildren(true); 
         }
+    }
+
+    public bool RunSolve()
+    {
+        while (true)
+        {
+            lock(this)
+            {
+                var success = Algorithms.BrushfireSolver(grid);
+
+                if (grid.AllMinesFlagged())
+                {
+                    grid.RevealMines();
+                    return true;
+                }
+
+                if (!success)
+                {
+                    grid.RevealMines();
+                    return false;
+                }
+            }
+        }
+    }
+
+    protected override void Update(float dt)
+    {
     }
 
     protected override void FixedUpdate(float dt)
