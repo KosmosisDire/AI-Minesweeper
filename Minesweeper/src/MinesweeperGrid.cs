@@ -49,6 +49,7 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         if (exclude != null) bombs.Remove(exclude);
         bombs.Shuffle();
         bombs.RemoveRange(defaultMineCount, bombs.Count - defaultMineCount);
+        
         bombs.ForEach(cell => cell.isMine = true);
     }
 

@@ -18,8 +18,18 @@ public class GeneticSolver : Solver
     public class Chromosome
     {
         public float[,] bombProbabilities;
+        public float[,] probabilityErrors;
         public float fitness;
 
+        public int BombCount => bombProbabilities.Cast<float>().Count(probability => probability > 0.5f);
+
+        public Chromosome(int sizeX, int sizeY)
+        {
+            bombProbabilities = new float[sizeX, sizeY];
+            probabilityErrors = new float[sizeX, sizeY];
+            fitness = 0;
+        }
+        
         public void Mutate(float chance, float strength)
         {
             for (int x = 0; x < bombProbabilities.GetLength(0); x++)
@@ -28,7 +38,8 @@ public class GeneticSolver : Solver
                 {
                     if (Application.random.NextSingle() < chance)
                     {
-                        bombProbabilities[x, y] += Application.random.NextSingle() * strength - strength / 2f;
+                        var strengthMod = strength * (0.5f+probabilityErrors[x, y]);
+                        bombProbabilities[x, y] += Application.random.NextSingle() * strengthMod - strengthMod / 2f;
                         bombProbabilities[x, y] = Math.Clamp(bombProbabilities[x, y], 0, 1);
                     }
                 }
@@ -37,11 +48,7 @@ public class GeneticSolver : Solver
 
         public static Chromosome Crossover(Chromosome parent1, Chromosome parent2)
         {
-            var newChromosome = new Chromosome
-            {
-                bombProbabilities = new float[parent1.bombProbabilities.GetLength(0), parent1.bombProbabilities.GetLength(1)],
-                fitness = 0
-            };
+            var newChromosome = new Chromosome(parent1.bombProbabilities.GetLength(0), parent1.bombProbabilities.GetLength(1));
 
             for (int x = 0; x < parent1.bombProbabilities.GetLength(0); x++)
             {
@@ -65,11 +72,7 @@ public class GeneticSolver : Solver
     {
         for (int i = 0; i < populationSize; i++)
         {
-            var chromosome = new Chromosome
-            {
-                bombProbabilities = new float[grid.numColumns, grid.numRows],
-                fitness = 0
-            };
+            var chromosome = new Chromosome(grid.numColumns, grid.numRows);
 
             for (int x = 0; x < grid.numColumns; x++)
             {
@@ -125,29 +128,51 @@ public class GeneticSolver : Solver
         return parents;
     }
 
+    public void DebugSolution()
+    {
+        foreach (var cell in grid.cells)
+        {
+            var (x, y) = (cell.x, cell.y);
+            var probability = bestChromosome.bombProbabilities[x, y];
+            if (probability > 0.5)
+            {
+                if (cell.isMine) cell.SetIcon(Properties.Resources.grass);
+                else cell.SetIcon(Properties.Resources.explosion);
+            }
+            else
+            {
+                cell.RemoveIcon();
+            }
+        }
+    }
+
     private void CalculateFitness()
     {
         foreach (var chromosome in chromosomes)
         {
-            var bombProbabilities = chromosome.bombProbabilities;
             var fitness = 0f;
 
-            for (int x = 0; x < grid.numColumns; x++)
+            // we only allow the fitness function to check as many cells as there are bombs otherwise it is given more information than possible in one game
+            var possibleCells = new List<MinesweeperCell>();
+            possibleCells.AddRange(grid.cells);
+
+
+            // choose a random set of cells to check
+            var len = possibleCells.Count;
+            for (int i = 0; i < 99; i++)
             {
-                for (int y = 0; y < grid.numRows; y++)
-                {
-                    var cell = grid.GetCell(x, y);
+                var cell = possibleCells[Application.random.Next(0, possibleCells.Count)];
+                possibleCells.Remove(cell);
 
-                    var probability = bombProbabilities[x, y];
-
-                    var realProbability = cell.isMine ? 1 : 0;
-                    
-                    var error = realProbability - probability;
-                    fitness += error * error;
-                }
+                var (x, y) = (cell.x, cell.y);
+                var probability = chromosome.bombProbabilities[x, y];
+                var realProbability = cell.isMine ? 1 : 0;
+                var error = realProbability - probability;
+                chromosome.probabilityErrors[x, y] = error;
+                fitness += error * error;
             }
 
-            fitness /= grid.numColumns * grid.numRows;
+            fitness /= 99;
             fitness = MathF.Sqrt(fitness);
 
             chromosome.fitness = fitness;
@@ -162,6 +187,24 @@ public class GeneticSolver : Solver
         fitnessMin = chromosomes.Min(chromosome => chromosome.fitness);
     }
 
+    public Chromosome GetWoC(int topNum)
+    {
+        var chromosome = new Chromosome(grid.numColumns, grid.numRows);
+
+        chromosomes.Take(topNum).ToList().ForEach((c) =>
+        {
+            for (int x = 0; x < grid.numColumns; x++)
+            {
+                for (int y = 0; y < grid.numRows; y++)
+                {
+                    chromosome.bombProbabilities[x, y] += c.bombProbabilities[x, y];
+                }
+            }
+        });
+
+        return chromosome;
+    }
+
     private void CullPopulation(float percentage01)
     {
         chromosomes.RemoveRange(chromosomes.Count - (int)(chromosomes.Count * percentage01), (int)(chromosomes.Count * percentage01));
@@ -172,26 +215,30 @@ public class GeneticSolver : Solver
         Console.WriteLine($"Running generation {chromosomes.Count}");
         
         CalculateFitness();
-        var parents = SelectParents(0.3f, 0.1f);
+        chromosomes[^1] = GetWoC(10);
+
+        var parents = SelectParents(0.5f, 0.1f);
 
         var newChromosomes = new List<Chromosome>();
 
         foreach (var (parent1, parent2) in parents)
         {
             var newChromosome = Chromosome.Crossover(parent1, parent2);
-            newChromosome.Mutate(0.1f, 0.1f);
+            newChromosome.Mutate(fitnessMin, 2 * fitnessMin);
             newChromosomes.Add(newChromosome);
         }
 
         CalculateFitness();
-        CullPopulation(0.3f);
+        CullPopulation(0.5f);
 
         chromosomes.AddRange(newChromosomes);
+
+        // DebugSolution();
     }
 
     public void Solve(CancellationToken token = default)
     {
-        CreateInitialPopulation(20);
+        CreateInitialPopulation(50);
 
         for (int i = 0; i < 10000; i++)
         {
@@ -202,6 +249,9 @@ public class GeneticSolver : Solver
             }
 
             RunGeneration();
+
+            Console.WriteLine(bestChromosome.BombCount);
+            if (fitnessMin < 0.07f || (fitnessMin < 0.15f && bestChromosome.BombCount == grid.defaultMineCount)) break;
         }
 
         CalculateFitness();
@@ -258,7 +308,7 @@ public class GeneticSolver : Solver
         var move = grid.GetCell(minProbabilityCoords.Item1, minProbabilityCoords.Item2);
         var flag = grid.GetCell(maxProbabilityCoords.Item1, maxProbabilityCoords.Item2);
 
-        if (maxProbability >= 0.7) flag.Flag();
+        if (maxProbability >= 0.5) flag.Flag();
 
         if (move.isMine) 
         {

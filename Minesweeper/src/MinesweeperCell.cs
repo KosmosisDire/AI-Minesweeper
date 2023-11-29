@@ -66,15 +66,26 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         grid.unrevealedUnflaggedCells.Remove(this);
     }
 
+    byte[] currentIcon;
     public void SetIcon(byte[] imageData)
     {
-        icon.sprite.Texture = new Texture(imageData);
-        icon.Style.width = card.InnerWidth * 0.6f;
-        icon.Style.height = icon.Style.width;
-        icon.Style.alignSelfX = Alignment.Center;
-        icon.Style.alignSelfY = Alignment.Center;
-        icon.Style.ignorePointerEvents = true;
+        if (currentIcon != imageData)
+        {
+            icon.sprite.Texture = new Texture(imageData);
+            icon.Style.width = card.InnerWidth * 0.6f;
+            icon.Style.height = icon.Style.width;
+            icon.Style.alignSelfX = Alignment.Center;
+            icon.Style.alignSelfY = Alignment.Center;
+            icon.Style.ignorePointerEvents = true;
+        }
+
         icon.Style.visible = true;
+        currentIcon = imageData;
+    }
+
+    public void RemoveIcon()
+    {
+        icon.Style.visible = false;
     }
 
     public void AnimateReveal()

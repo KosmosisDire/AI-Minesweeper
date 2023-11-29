@@ -5,6 +5,7 @@ using Minesweeper;
 using SFML.Window;
 using Window = ProtoEngine.Rendering.Window;
 using Minesweeper.Solvers;
+using System.Diagnostics;
 
 var app = new MinesweeperApp("Minesweeper", Theme.GlobalTheme.background, false);
 app.Run();
@@ -33,19 +34,25 @@ public class MinesweeperApp : Application
         var infoPanel = new Panel(window);
         infoPanel.Style.width = "20em";
 
+        var solveTimer = new Stopwatch();
+
         var geneticSolver = new GeneticSolver(grid);
         var semanticSolver = new SemanticSolver(grid);
 
         var GAPlot = new Plot(infoPanel, new Series[]
         {
-            new(Color.Blue, new(() => geneticSolver.fitnessAverage)),
-            new(Color.Red, new(() => geneticSolver.fitnessMax)),
-            new(Color.Green, new(() => geneticSolver.fitnessMin)),
+            new("Average", Color.Blue, new(() => geneticSolver.fitnessAverage)),
+            new("Max", Color.Red, new(() => geneticSolver.fitnessMax)),
+            new("Min",Color.Green, new(() => geneticSolver.fitnessMin)),
+        });
+
+        var bestPlot = new Plot(infoPanel, new Series[]
+        {
+            new("Min",Color.Green, new(() => geneticSolver.fitnessMin)),
         });
 
         new TextElement(infoPanel, () => "Min Fitness: " + geneticSolver.fitnessMin);
-        // new TextElement(infoPanel, () => "Wins: " + wins);
-        // new TextElement(infoPanel, () => "Losses: " + losses);
+        new TextElement(infoPanel, () => "Solve Time: " + solveTimer.ElapsedMilliseconds + "ms");
 
         var tokenSource = new CancellationTokenSource();
         var token = tokenSource.Token;
@@ -62,12 +69,14 @@ public class MinesweeperApp : Application
                 button.AddStyle(cancelButtonStyle);
                 button.label.Text = "Cancel";
                 semanticSolver = new SemanticSolver(grid);
+                solveTimer.Restart();
                 await grid.RunSolver(semanticSolver, updateLoop, true, token);
             }
 
             button.label.Text = "Semantic Solver";
             button.RemoveStyle(cancelButtonStyle);
             tokenSource.Cancel();
+            solveTimer.Stop();
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
         });
@@ -82,6 +91,8 @@ public class MinesweeperApp : Application
                 geneticSolver = new GeneticSolver(grid);
                 grid.GenerateMap(grid.defaultMineCount);
                 GAPlot.Start();
+                bestPlot.Start();
+                solveTimer.Restart();
                 await grid.RunSolver(geneticSolver, updateLoop, false, token);
             }
 
@@ -89,6 +100,8 @@ public class MinesweeperApp : Application
             button.RemoveStyle(cancelButtonStyle);
             tokenSource.Cancel();
             GAPlot.Stop();
+            bestPlot.Stop();
+            solveTimer.Stop();
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
         });
