@@ -8,11 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="src\Solvers\BrushfireSolver.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../ProtoEngine/ProtoEngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Resources\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="src\Solvers\BrushfireSolver.cs" />
   </ItemGroup>
 
   <ItemGroup>

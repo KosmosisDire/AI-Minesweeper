@@ -2,10 +2,9 @@
 using ProtoEngine.UI;
 using SFML.Graphics;
 using Minesweeper;
-using Image = ProtoEngine.Image;
-using TerraFX.Interop.Windows;
 using SFML.Window;
 using Window = ProtoEngine.Rendering.Window;
+using Minesweeper.Solvers;
 
 var app = new MinesweeperApp("Minesweeper", Theme.GlobalTheme.background, false);
 app.Run();
@@ -21,126 +20,93 @@ public class MinesweeperApp : Application
     public int wins = 0;
     public int losses = 0;
     public int runs = 0;
-    
-    public Plot winLossPlot;
-    public Plot successPlot;
 
-    public bool foundMine = false;
     protected override void Setup()
     {
         base.Setup();
 
         window.Style.fontSize = window.Width / 1920f * 16f;
 
-        CreateBoard(30, 16, 0.15f);
+        CreateBoard(30, 16);
+        grid.defaultMineCount = 99;
 
         var infoPanel = new Panel(window);
-        winLossPlot = new Plot(infoPanel, new Series[]
+        infoPanel.Style.width = "20em";
+
+        var geneticSolver = new GeneticSolver(grid);
+        var semanticSolver = new SemanticSolver(grid);
+
+        var GAPlot = new Plot(infoPanel, new Series[]
         {
-            new(Color.Green, new(() => wins)),
-            new(Color.Red, new(() => losses))
+            new(Color.Blue, new(() => geneticSolver.fitnessAverage)),
+            new(Color.Red, new(() => geneticSolver.fitnessMax)),
+            new(Color.Green, new(() => geneticSolver.fitnessMin)),
         });
 
-        successPlot = new Plot(infoPanel, new Series[]
+        new TextElement(infoPanel, () => "Min Fitness: " + geneticSolver.fitnessMin);
+        // new TextElement(infoPanel, () => "Wins: " + wins);
+        // new TextElement(infoPanel, () => "Losses: " + losses);
+
+        var tokenSource = new CancellationTokenSource();
+        var token = tokenSource.Token;
+
+        var cancelButtonStyle = new Style() 
         {
-            new(Color.Blue, new(() => successRate))
-        });
-
-        new TextElement(infoPanel, () => "Success Rate: " + successRate);
-        new TextElement(infoPanel, () => "Wins: " + wins);
-        new TextElement(infoPanel, () => "Losses: " + losses);
-
-        window.globalEvents.KeyPressed+= (KeyEventArgs e, Window window) => {
-            if (e.Code==Keyboard.Key.R) 
-            {
-                RunDensityTest();
-            }
+            fillColor = Color.Red.Darken(0.8f),
         };
-    }
 
-    public void RunSolveBatch(int runs, float mineDensity)
-    {
-        int localWins = 0;
-        int localLosses = 0;
-        for (int i = 0; i < runs; i++)
+        var semanticSolve = new Button(infoPanel, "Semantic Solve", async (button) => 
         {
-            grid.ResetGrid();
-            grid.GenerateMap(mineDensity);
-            var success = RunSolve();
-            if (success) localWins++;
-            else localLosses++;
-        }
-
-        successRate = (float)localWins / (localWins + localLosses);
-        wins = localWins;
-        losses = localLosses;
-
-        Console.WriteLine($"Success Rate: {successRate} Wins: {wins} Losses: {losses}");
-    }
-
-    public void RunDensityTest()
-    {
-        winLossPlot.Reset();
-        successPlot.Reset();
-        winLossPlot.Start();
-        successPlot.Start();
-
-        updateLoop.RunAction(() => {
-
-            for (float i = 0; i < 0.25; i += 0.02f)
+            if (!grid.solving)
             {
-                RunSolveBatch(100, i);
+                button.AddStyle(cancelButtonStyle);
+                button.label.Text = "Cancel";
+                semanticSolver = new SemanticSolver(grid);
+                await grid.RunSolver(semanticSolver, updateLoop, true, token);
             }
 
-            winLossPlot.Stop();
-            successPlot.Stop();
+            button.label.Text = "Semantic Solver";
+            button.RemoveStyle(cancelButtonStyle);
+            tokenSource.Cancel();
+            tokenSource = new CancellationTokenSource();
+            token = tokenSource.Token;
         });
 
-        
-    }
-
-    public void CreateBoard(int width, int height, float bombChance)
-    {
-        lock(this)
+        var geneticSolve = new Button(infoPanel, "Genetic Solve", async (button) => 
         {
-            if (grid is not null) grid.Remove();
-
-            grid = new MinesweeperGrid(window, height, width);
-
-            grid.GenerateMap(bombChance);
-
-            grid.ForEachCell((cell,x,y) => 
+            
+            if (!grid.solving)
             {
-                cell.OnClick += (obj) => cell.Reveal();
-                if (cell.isMine) cell.SetIcon(Properties.Resources.mine);
-            });
-
-            foundMine = false;
-            window.RebuildAllChildren(true); 
-        }
-    }
-
-    public bool RunSolve()
-    {
-        while (true)
-        {
-            lock(this)
-            {
-                var success = Algorithms.BrushfireSolver(grid);
-
-                if (grid.AllMinesFlagged())
-                {
-                    grid.RevealMines();
-                    return true;
-                }
-
-                if (!success)
-                {
-                    grid.RevealMines();
-                    return false;
-                }
+                button.AddStyle(cancelButtonStyle);
+                button.label.Text = "Cancel";
+                geneticSolver = new GeneticSolver(grid);
+                grid.GenerateMap(grid.defaultMineCount);
+                GAPlot.Start();
+                await grid.RunSolver(geneticSolver, updateLoop, false, token);
             }
-        }
+
+            button.label.Text = "Genetic Solver";
+            button.RemoveStyle(cancelButtonStyle);
+            tokenSource.Cancel();
+            GAPlot.Stop();
+            tokenSource = new CancellationTokenSource();
+            token = tokenSource.Token;
+        });
+    }
+
+    public void CreateBoard(int width, int height)
+    {
+        if (grid is not null) grid.Remove();
+
+        grid = new MinesweeperGrid(window, height, width);
+
+        grid.ForEachCell((cell,x,y) => 
+        {
+            cell.OnClick += (obj) => cell.Reveal();
+            if (cell.isMine) cell.SetIcon(Properties.Resources.mine);
+        });
+
+        window.RebuildAllChildren(true); 
     }
 
     protected override void Update(float dt)

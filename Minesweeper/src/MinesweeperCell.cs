@@ -63,12 +63,13 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         IsFlagged = true;
         if (isMine) SetIcon(Properties.Resources.flag);
         else SetIcon(Properties.Resources.wrongflag);
+        grid.unrevealedUnflaggedCells.Remove(this);
     }
 
     public void SetIcon(byte[] imageData)
     {
         icon.sprite.Texture = new Texture(imageData);
-        icon.Style.width = card.InnerWidth;
+        icon.Style.width = card.InnerWidth * 0.6f;
         icon.Style.height = icon.Style.width;
         icon.Style.alignSelfX = Alignment.Center;
         icon.Style.alignSelfY = Alignment.Center;
@@ -130,12 +131,17 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         if (IsRevealed) return;
         IsRevealed = true;
 
-        grid.unrevealedCells.Remove(this);  
+        grid.unrevealedCells.Remove(this);
+        grid.unrevealedUnflaggedCells.Remove(this);
         grid.revealedCells.Add(this);
 
         if(IsFlagged && isMine) 
         {
             SetIcon(Properties.Resources.grass);
+            card.AddStyle(new Style
+            {
+                fillColor = Color.Green.Darken(0.6f)
+            });
         }
         else if (isMine) 
         {
@@ -160,8 +166,8 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
 
     public void Reveal(bool isFirst = false)
     {
-        // AnimateReveal();
-        InstantVisualReveal();
+        AnimateReveal();
+        // InstantVisualReveal();
         RevealRecursive();
 
         if (isMine && isFirst) 
@@ -250,7 +256,6 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         var neighbors = GetNeighbors().Where(obj => !obj.IsRevealed && !obj.IsFlagged);
         return neighbors.ToList();
     }
-
 
     public int GetFlaggedNeighborCount()
     {
