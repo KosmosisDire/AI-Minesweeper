@@ -105,6 +105,27 @@ public class MinesweeperApp : Application
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
         });
+
+        var Beginner = new Button(infoPanel, "Beginner", async (button) => //Beginner difficulty
+        {
+            button.label.Text = "Beginner";
+            CreateBoard(10, 10);
+            grid.defaultMineCount = 10;
+        });
+
+        var Intermediate = new Button(infoPanel, "Intermediate", async (button) => //Beginner difficulty
+        {
+            button.label.Text = "Intermediate";
+            CreateBoard(16, 16);
+            grid.defaultMineCount = 40;
+        });
+
+        var Expert = new Button(infoPanel, "Expert", async (button) => //Beginner difficulty
+        {
+            button.label.Text = "Expert";
+            CreateBoard(30, 16);
+            grid.defaultMineCount = 99;
+        });
     }
 
     public void CreateBoard(int width, int height)
