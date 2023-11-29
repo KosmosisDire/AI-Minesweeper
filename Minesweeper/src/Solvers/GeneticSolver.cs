@@ -1,6 +1,7 @@
 using ProtoEngine;
 using ProtoEngine.UI;
 using ProtoEngine.Utils;
+using SFML.Graphics;
 
 namespace Minesweeper.Solvers;
 
@@ -59,6 +60,23 @@ public class GeneticSolver : Solver
             }
 
             return newChromosome;
+        }
+
+        public bool IsPerfectSolution(MinesweeperGrid grid)
+        {
+            var cells = grid.cells;
+            
+            foreach (var cell in cells)
+            {
+                var (x, y) = (cell.x, cell.y);
+                var probability = bombProbabilities[x, y];
+                var realProbability = cell.isMine ? 1 : 0;
+                var error = realProbability - probability;
+
+                if (error > 0.5f) return false;
+            }
+
+            return true;
         }
     }
 
@@ -136,13 +154,15 @@ public class GeneticSolver : Solver
             var probability = bestChromosome.bombProbabilities[x, y];
             if (probability > 0.5)
             {
-                if (cell.isMine) cell.SetIcon(Properties.Resources.grass);
-                else cell.SetIcon(Properties.Resources.explosion);
+                if (cell.isMine) cell.card.Style.fillColor = Color.Green;
+                else cell.card.Style.fillColor = Color.Red;
             }
             else
             {
-                cell.RemoveIcon();
+                cell.card.Style.fillColor = Theme.GlobalTheme.accentMuted;
             }
+
+            cell.card.Box.FillColor = cell.card.Style.fillColor;
         }
     }
 
@@ -168,6 +188,7 @@ public class GeneticSolver : Solver
                 var probability = chromosome.bombProbabilities[x, y];
                 var realProbability = cell.isMine ? 1 : 0;
                 var error = realProbability - probability;
+
                 chromosome.probabilityErrors[x, y] = error;
                 fitness += error * error;
             }
@@ -233,7 +254,7 @@ public class GeneticSolver : Solver
 
         chromosomes.AddRange(newChromosomes);
 
-        // DebugSolution();
+        DebugSolution();
     }
 
     public void Solve(CancellationToken token = default)
@@ -250,9 +271,10 @@ public class GeneticSolver : Solver
 
             RunGeneration();
 
-            Console.WriteLine(bestChromosome.BombCount);
-            if (fitnessMin < 0.07f || (fitnessMin < 0.15f && bestChromosome.BombCount == grid.defaultMineCount)) break;
+            if (fitnessMin < 0.05f) break;
         }
+
+        
 
         CalculateFitness();
 

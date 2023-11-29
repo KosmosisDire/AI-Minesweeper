@@ -24,7 +24,7 @@ public class SemanticSolver : Solver
 
             unaccountedBombsDict[cell] = unaccountedBombs;
 
-            cell.countText.Text = unaccountedBombs.ToString();
+            // cell.countText.Text = unaccountedBombs.ToString();
 
             if (unaccountedBombs == unrevealedAdjacent.Count)
             {
@@ -58,14 +58,14 @@ public class SemanticSolver : Solver
                 var revealedNeighbors = cell.GetRevealedNeighbors();
                 float sumAdjUnaccountedBombs = revealedNeighbors.Sum(adj => unaccountedBombsDict[adj]);
                 sumAdjUnaccountedBombs /= cell.GetUnrevealedUnflaggedNeighbors().Count;
-                cell.countText.Text = sumAdjUnaccountedBombs.ToString("N1");
+                // cell.countText.Text = sumAdjUnaccountedBombs.ToString("N1");
                 if (sumAdjUnaccountedBombs > 0) unaccountedBombSumList[sumAdjUnaccountedBombs] = cell;
             }
 
             if (unaccountedBombSumList.Count > 0)
             {
                 move = unaccountedBombSumList.First().Value;
-                Console.WriteLine(unaccountedBombSumList.First().Key);
+                // Console.WriteLine(unaccountedBombSumList.First().Key);
             }
         }
 
