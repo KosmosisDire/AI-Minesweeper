@@ -39,6 +39,11 @@ public class MinesweeperApp : Application
         var geneticSolver = new GeneticSolver(grid);
         var semanticSolver = new SemanticSolver(grid);
 
+        updateLoop.Connect((dt) =>
+        {
+            if(geneticSolver.IsSolved) solveTimer.Stop();
+        });
+
         var GAPlot = new Plot(infoPanel, new Series[]
         {
             new("Average", Color.Blue, new(() => geneticSolver.fitnessAverage)),
