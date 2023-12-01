@@ -152,18 +152,19 @@ public class GeneticSolver : Solver
         {
             var (x, y) = (cell.x, cell.y);
             var probability = bestChromosome.bombProbabilities[x, y];
-            if (probability > 0.5)
-            {
-                if (cell.isMine) cell.card.Style.fillColor = Color.Green;
-                else cell.card.Style.fillColor = Color.Red;
-            }
-            else
-            {
-                cell.card.Style.fillColor = Theme.GlobalTheme.accentMuted;
-            }
+
+            cell.card.Style.fillColor = new Color(35, 68, 83).Lerp(new Color(0, 122, 204), probability);
 
             cell.card.Box.FillColor = cell.card.Style.fillColor;
         }
+
+        // grid.unrevealedCells.ForEach((cell) => 
+        // {
+        //     if (cell.IsFlagged) return;
+        //     var (x, y) = (cell.x, cell.y);
+        //     cell.countText.Text = bestChromosome.bombProbabilities[x, y].ToString("N1");
+        //     // if(cell.isMine) cell.SetIcon(Properties.Resources.mine);
+        // });
     }
 
     private void CalculateFitness()
