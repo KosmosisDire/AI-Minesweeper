@@ -259,6 +259,7 @@ public class GeneticSolver : Solver
 
     public void Solve(CancellationToken token = default)
     {
+        List<int> temp = new List<int>();
         CreateInitialPopulation(50);
 
         for (int i = 0; i < 10000; i++)
@@ -270,6 +271,12 @@ public class GeneticSolver : Solver
             }
 
             RunGeneration();
+            
+            temp.Add(bestChromosome.BombCount);
+            if (temp.Count()==50){ //Check bombcount for each population
+                if (temp.Distinct().Count()==1) break; //If 1 => All mines have been flagged => Finish
+                temp.Clear();
+            }
 
             if (fitnessMin < 0.05f) break;
         }
