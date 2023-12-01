@@ -61,23 +61,6 @@ public class GeneticSolver : Solver
 
             return newChromosome;
         }
-
-        public bool IsPerfectSolution(MinesweeperGrid grid)
-        {
-            var cells = grid.cells;
-            
-            foreach (var cell in cells)
-            {
-                var (x, y) = (cell.x, cell.y);
-                var probability = bombProbabilities[x, y];
-                var realProbability = cell.isMine ? 1 : 0;
-                var error = realProbability - probability;
-
-                if (error > 0.5f) return false;
-            }
-
-            return true;
-        }
     }
 
     public List<Chromosome> chromosomes = new List<Chromosome>();
