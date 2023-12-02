@@ -46,7 +46,7 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
         label.Remove();
 
         countText = new TextElement(card, "");
-        countText.Style.fontSize = "20px";
+        countText.Style.fontSize = "15px";
         countText.Style.alignSelfX = Alignment.Center;
         countText.Style.alignSelfY = Alignment.Center;
 
@@ -291,11 +291,17 @@ public class MinesweeperCell : Button, IComparable<MinesweeperCell>
     {
         isMine = false;
         IsFlagged = false;
+        Unreveal();
+    }
+
+    public void Unreveal()
+    {
         IsRevealed = false;
         IsVisuallyRevealed = false;
         countText.Text = "";
         icon.Style.visible = false;
         card.ClearStyles();
         this.ClearStyles();
+        card.Style.fillColor = Theme.GlobalTheme.accentMuted;
     }
 }

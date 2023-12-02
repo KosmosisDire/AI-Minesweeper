@@ -67,23 +67,18 @@ public class GeneticSolver : Solver
 
         public bool AllFlagsCorrect(MinesweeperGrid grid)
         {
-            int foundFlags = 0;
-            for (int x = 0; x < bombProbabilities.GetLength(0); x++)
+            foreach (var cell in grid.cells)
             {
-                for (int y = 0; y < bombProbabilities.GetLength(1); y++)
+                var (x, y) = (cell.x, cell.y);
+                if (bombProbabilities[x, y] > 0.5f) // will be flagged
                 {
-                    if (bombProbabilities[x, y] > 0.5f) // will be flagged
-                    {
-                        foundFlags++;
-
-                        if (!grid.GetCell(x, y).isMine) return false;
-                    }
-
-                    if (foundFlags > grid.MineCount) return false;
+                    if (!cell.isMine) return false;
+                }
+                else // will not be flagged
+                {
+                    if (cell.isMine) return false;
                 }
             }
-
-            if (foundFlags != grid.MineCount) return false;
 
             return true;
         }
@@ -228,7 +223,7 @@ public class GeneticSolver : Solver
             {
                 for (int y = 0; y < grid.numRows; y++)
                 {
-                    chromosome.bombProbabilities[x, y] += c.bombProbabilities[x, y];
+                    chromosome.bombProbabilities[x, y] += c.bombProbabilities[x, y] / topNum;
                 }
             }
         });
@@ -243,35 +238,37 @@ public class GeneticSolver : Solver
 
     private void RunGeneration()
     {
-        Console.WriteLine($"Running generation {chromosomes.Count}");
-        
         CalculateFitness();
-        if (useWoC) chromosomes[^1] = GetWoC(10);
+        if (useWoC) 
+        {
+            var woc = GetWoC(10);
+            chromosomes[^1] = woc;
+        }
 
-        var parents = SelectParents(0.5f, 0.1f);
+        var parents = SelectParents(0.7f, 0.2f);
+        CullPopulation(0.7f);
 
         var newChromosomes = new List<Chromosome>();
 
         foreach (var (parent1, parent2) in parents)
         {
             var newChromosome = Chromosome.Crossover(parent1, parent2);
-            newChromosome.Mutate(fitnessMin, 2 * fitnessMin);
+            newChromosome.Mutate(fitnessMin, 3 * fitnessMin);
             newChromosomes.Add(newChromosome);
         }
 
-        CalculateFitness();
-        CullPopulation(0.5f);
-
         chromosomes.AddRange(newChromosomes);
+
+        CalculateFitness();
 
         DebugSolution();
     }
 
     public void Solve(CancellationToken token = default)
     {
-        CreateInitialPopulation(50);
+        CreateInitialPopulation(70);
 
-        for (int i = 0; i < 10000; i++)
+        while (true)
         {
             if (token.IsCancellationRequested)
             {
@@ -285,7 +282,7 @@ public class GeneticSolver : Solver
             if (fitnessMin < 0.05f || bestChromosome.AllFlagsCorrect(grid)) break;
         }
 
-        CalculateFitness();
+        // CalculateFitness();
 
         IsSolved = true;
     }

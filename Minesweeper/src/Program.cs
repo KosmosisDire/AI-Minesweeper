@@ -56,8 +56,14 @@ public class MinesweeperApp : Application
             if(geneticSolver.IsSolved) solveTimer.Stop();
         });
 
+        new TextElement(infoPanel, () => "Population: " + geneticSolver.chromosomes.Count);
         new TextElement(infoPanel, () => "Min Fitness: " + geneticSolver.fitnessMin);
         new TextElement(infoPanel, () => "Solve Time: " + solveTimer.ElapsedMilliseconds + "ms");
+
+        var useWoCToggle = new LabeledElement<Toggle>(infoPanel, "Use WoC", new Toggle((toggle, value) => 
+        {
+            geneticSolver.useWoC = value;
+        }));
 
         var tokenSource = new CancellationTokenSource();
         var token = tokenSource.Token;
@@ -91,15 +97,22 @@ public class MinesweeperApp : Application
             
             if (!grid.solving)
             {
+                GAPlot.Reset();
+                bestPlot.Reset();
+
                 button.AddStyle(cancelButtonStyle);
                 button.label.Text = "Cancel";
-                geneticSolver = new GeneticSolver(grid);
+                geneticSolver = new GeneticSolver(grid)
+                {
+                    useWoC = useWoCToggle.Content.Value
+                };
+                
                 geneticSolver.OnGenerationComplete += () =>
                 {
                     GAPlot.Step();
                     bestPlot.Step();
                 };
-                grid.GenerateMap(grid.defaultMineCount);
+                grid.UnrevealGrid();
                 solveTimer.Restart();
                 await grid.RunSolver(geneticSolver, updateLoop, false, token);
             }
@@ -112,10 +125,10 @@ public class MinesweeperApp : Application
             token = tokenSource.Token;
         });
 
-        var useWoCToggle = new LabeledElement(infoPanel, "Use WoC", new Toggle((toggle, value) => 
+        var genBoardButton = new Button(infoPanel, "New Board", (button) => 
         {
-            geneticSolver.useWoC = value;
-        }));
+            grid.GenerateMap(grid.defaultMineCount);
+        });
 
         var boardTypePanel = new Panel(window);
         boardTypePanel.Style.width = "20em";

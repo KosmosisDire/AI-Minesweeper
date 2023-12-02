@@ -89,6 +89,20 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         unrevealedUnflaggedCells.AddRange(cells);
     }
 
+    public void UnrevealGrid()
+    {
+        ForEachCell((cell, x, y) => 
+        {
+            cell.Unreveal();
+        });
+
+        unrevealedCells.Clear();
+        revealedCells.Clear();
+        unrevealedUnflaggedCells.Clear();
+        unrevealedCells.AddRange(cells);
+        unrevealedUnflaggedCells.AddRange(cells);
+    }
+
     public MinesweeperCell GetRandomCell(bool onlyUnrevealedAndUnflagged)
     {
         if (onlyUnrevealedAndUnflagged)
