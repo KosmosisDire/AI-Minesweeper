@@ -42,8 +42,8 @@ public class GeneticSolver : Solver
                 {
                     if (Application.random.NextSingle() < chance)
                     {
-                        var strengthMod = strength * (0.5f+probabilityErrors[x, y]);
-                        bombProbabilities[x, y] += Application.random.NextSingle() * strengthMod - strengthMod / 2f;
+                        var strengthMod = strength * probabilityErrors[x, y];
+                        bombProbabilities[x, y] += (Application.random.NextSingle() - 0.5f) * strengthMod;
                         bombProbabilities[x, y] = Math.Clamp(bombProbabilities[x, y], 0, 1);
                     }
                 }
@@ -59,6 +59,7 @@ public class GeneticSolver : Solver
                 for (int y = 0; y < parent1.bombProbabilities.GetLength(1); y++)
                 {
                     newChromosome.bombProbabilities[x, y] = (parent1.bombProbabilities[x, y] + parent2.bombProbabilities[x, y]) / 2f;
+                    newChromosome.probabilityErrors[x, y] = (parent1.probabilityErrors[x, y] + parent2.probabilityErrors[x, y]) / 2f;
                 }
             }
 
@@ -100,7 +101,7 @@ public class GeneticSolver : Solver
             {
                 for (int y = 0; y < grid.numRows; y++)
                 {
-                    chromosome.bombProbabilities[x, y] = (float)Application.random.NextSingle();
+                    chromosome.bombProbabilities[x, y] = Application.random.NextSingle() * 0.1f;
                 }
             }
 
@@ -217,72 +218,81 @@ public class GeneticSolver : Solver
     {
         var chromosome = new Chromosome(grid.numColumns, grid.numRows);
 
-        chromosomes.Take(topNum).ToList().ForEach((c) =>
+        var top = chromosomes.Take(topNum).ToList();
+        var weights = new List<float>();
+
+        top.ForEach((c) => weights.Add(1 / (c.fitness + 1)));
+        var weightSum = weights.Sum();
+        weights = weights.Select((w) => w / weightSum).ToList();
+
+        for (int i = 0; i < topNum; i++)
         {
+            var c = top[i];
             for (int x = 0; x < grid.numColumns; x++)
             {
                 for (int y = 0; y < grid.numRows; y++)
                 {
-                    chromosome.bombProbabilities[x, y] += c.bombProbabilities[x, y] / topNum;
+                    chromosome.bombProbabilities[x, y] += c.bombProbabilities[x, y] * weights[i];
+                    chromosome.probabilityErrors[x, y] += c.probabilityErrors[x, y] * weights[i];
                 }
             }
-        });
+        };
 
         return chromosome;
     }
 
-    private void CullPopulation(float percentage01)
+    private void CullPopulation(int maxPopulation)
     {
-        chromosomes.RemoveRange(chromosomes.Count - (int)(chromosomes.Count * percentage01), (int)(chromosomes.Count * percentage01));
+        chromosomes.RemoveRange(maxPopulation, chromosomes.Count - maxPopulation);
     }
 
     private void RunGeneration()
     {
-        CalculateFitness();
         if (useWoC) 
         {
-            var woc = GetWoC(10);
+            var woc = GetWoC(5);
             chromosomes[^1] = woc;
         }
 
-        var parents = SelectParents(0.7f, 0.2f);
-        CullPopulation(0.7f);
+        var parents = SelectParents(0.5f, 0.2f);
 
         var newChromosomes = new List<Chromosome>();
 
         foreach (var (parent1, parent2) in parents)
         {
             var newChromosome = Chromosome.Crossover(parent1, parent2);
-            newChromosome.Mutate(fitnessMin, 3 * fitnessMin);
+            newChromosome.Mutate(fitnessMin, 2 * fitnessMin);
             newChromosomes.Add(newChromosome);
         }
 
         chromosomes.AddRange(newChromosomes);
 
         CalculateFitness();
+        CullPopulation(20); 
 
         DebugSolution();
     }
 
     public void Solve(CancellationToken token = default)
     {
-        CreateInitialPopulation(70);
+        CreateInitialPopulation(20);
+
+        CalculateFitness();
 
         while (true)
         {
-            if (token.IsCancellationRequested)
-            {
-                CalculateFitness();
-                return;
-            }
+            
 
             RunGeneration();
             OnGenerationComplete?.Invoke();
 
             if (fitnessMin < 0.05f || bestChromosome.AllFlagsCorrect(grid)) break;
-        }
 
-        // CalculateFitness();
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+        }
 
         IsSolved = true;
     }
