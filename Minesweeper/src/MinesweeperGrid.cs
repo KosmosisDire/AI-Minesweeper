@@ -16,11 +16,7 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
 
     public MinesweeperGrid(Element parent, int rows, int columns) : base(parent)
     {
-        Regenerate(rows, columns, (x, y) => 
-        {
-            var cell = new MinesweeperCell(this, x, y);
-            return cell;
-        });
+        Resize(rows, columns);
 
         ForEachRow(row => {row.Style.contentFitX = Fit.Fit; row.Style.contentFitY = Fit.Fit;});
 
@@ -38,6 +34,15 @@ public class MinesweeperGrid : Grid<MinesweeperCell>
         Style.paddingY = "1.5em";
 
         ResetGrid();
+    }
+
+    public void Resize(int rows, int columns)
+    {
+        Resize(rows, columns, (x, y) => 
+        { 
+            var cell = new MinesweeperCell(this, x, y);
+            return cell;
+        });
     }
 
     public void GenerateMap(int mineCount, MinesweeperCell? exclude = null)

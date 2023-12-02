@@ -39,11 +39,6 @@ public class MinesweeperApp : Application
         var geneticSolver = new GeneticSolver(grid);
         var semanticSolver = new SemanticSolver(grid);
 
-        updateLoop.Connect((dt) =>
-        {
-            if(geneticSolver.IsSolved) solveTimer.Stop();
-        });
-
         var GAPlot = new Plot(infoPanel, new Series[]
         {
             new("Average", Color.Blue, new(() => geneticSolver.fitnessAverage)),
@@ -54,6 +49,11 @@ public class MinesweeperApp : Application
         var bestPlot = new Plot(infoPanel, new Series[]
         {
             new("Min",Color.Green, new(() => geneticSolver.fitnessMin)),
+        });
+
+        updateLoop.Connect((dt) =>
+        {
+            if(geneticSolver.IsSolved) solveTimer.Stop();
         });
 
         new TextElement(infoPanel, () => "Min Fitness: " + geneticSolver.fitnessMin);
@@ -94,9 +94,12 @@ public class MinesweeperApp : Application
                 button.AddStyle(cancelButtonStyle);
                 button.label.Text = "Cancel";
                 geneticSolver = new GeneticSolver(grid);
+                geneticSolver.OnGenerationComplete += () =>
+                {
+                    GAPlot.Step();
+                    bestPlot.Step();
+                };
                 grid.GenerateMap(grid.defaultMineCount);
-                GAPlot.Start();
-                bestPlot.Start();
                 solveTimer.Restart();
                 await grid.RunSolver(geneticSolver, updateLoop, false, token);
             }
@@ -104,12 +107,15 @@ public class MinesweeperApp : Application
             button.label.Text = "Genetic Solver";
             button.RemoveStyle(cancelButtonStyle);
             tokenSource.Cancel();
-            GAPlot.Stop();
-            bestPlot.Stop();
             solveTimer.Stop();
             tokenSource = new CancellationTokenSource();
             token = tokenSource.Token;
         });
+
+        var useWoCToggle = new LabeledElement(infoPanel, "Use WoC", new Toggle((toggle, value) => 
+        {
+            geneticSolver.useWoC = value;
+        }));
 
         var boardTypePanel = new Panel(window);
         boardTypePanel.Style.width = "20em";
@@ -119,21 +125,18 @@ public class MinesweeperApp : Application
 
         var Beginner = new Button(boardTypePanel, "Beginner", (button) => //Beginner difficulty
         {
-            button.label.Text = "Beginner";
             CreateBoard(10, 10);
             grid.defaultMineCount = 10;
         });
 
         var Intermediate = new Button(boardTypePanel, "Intermediate", (button) => //Beginner difficulty
         {
-            button.label.Text = "Intermediate";
             CreateBoard(16, 16);
             grid.defaultMineCount = 40;
         });
 
         var Expert = new Button(boardTypePanel, "Expert", (button) => //Beginner difficulty
         {
-            button.label.Text = "Expert";
             CreateBoard(30, 16);
             grid.defaultMineCount = 99;
         });

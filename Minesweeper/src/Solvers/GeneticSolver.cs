@@ -12,6 +12,9 @@ public class GeneticSolver : Solver
     public float fitnessMax;
     public float fitnessMin;
 
+    public bool useWoC = false;
+
+    public event Action OnGenerationComplete;
 
     public bool IsSolved { get; private set;}
     public Chromosome bestChromosome;
@@ -22,7 +25,7 @@ public class GeneticSolver : Solver
         public float[,] probabilityErrors;
         public float fitness;
 
-        public int BombCount => bombProbabilities.Cast<float>().Count(probability => probability > 0.5f);
+        public int MineCount => bombProbabilities.Cast<float>().Count(probability => probability > 0.5f);
 
         public Chromosome(int sizeX, int sizeY)
         {
@@ -60,6 +63,29 @@ public class GeneticSolver : Solver
             }
 
             return newChromosome;
+        }
+
+        public bool AllFlagsCorrect(MinesweeperGrid grid)
+        {
+            int foundFlags = 0;
+            for (int x = 0; x < bombProbabilities.GetLength(0); x++)
+            {
+                for (int y = 0; y < bombProbabilities.GetLength(1); y++)
+                {
+                    if (bombProbabilities[x, y] > 0.5f) // will be flagged
+                    {
+                        foundFlags++;
+
+                        if (!grid.GetCell(x, y).isMine) return false;
+                    }
+
+                    if (foundFlags > grid.MineCount) return false;
+                }
+            }
+
+            if (foundFlags != grid.MineCount) return false;
+
+            return true;
         }
     }
 
@@ -220,7 +246,7 @@ public class GeneticSolver : Solver
         Console.WriteLine($"Running generation {chromosomes.Count}");
         
         CalculateFitness();
-        chromosomes[^1] = GetWoC(10);
+        if (useWoC) chromosomes[^1] = GetWoC(10);
 
         var parents = SelectParents(0.5f, 0.1f);
 
@@ -243,7 +269,6 @@ public class GeneticSolver : Solver
 
     public void Solve(CancellationToken token = default)
     {
-        List<int> temp = new List<int>();
         CreateInitialPopulation(50);
 
         for (int i = 0; i < 10000; i++)
@@ -255,17 +280,10 @@ public class GeneticSolver : Solver
             }
 
             RunGeneration();
-            
-            temp.Add(bestChromosome.BombCount);
-            if (temp.Count()==50){ //Check bombcount for each population
-                if (temp.Distinct().Count()==1) break; //If 1 => All mines have been flagged => Finish
-                temp.Clear();
-            }
+            OnGenerationComplete?.Invoke();
 
-            if (fitnessMin < 0.05f) break;
+            if (fitnessMin < 0.05f || bestChromosome.AllFlagsCorrect(grid)) break;
         }
-
-        
 
         CalculateFitness();
 
